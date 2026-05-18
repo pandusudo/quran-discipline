@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "Quran Discipline",
+  "description": "Control your social media addiction with Quran Discipline, a browser extension that helps you stay focused and productive by blocking distracting websites and providing motivational Quranic verses.",
+  "version": "1.0",
+  "action": {
+    "default_popup": "dist/index.html"
+  },
+  "background": {
+    "service_worker": "dist/background.js",
+    "type": "module"
+  },
+  "permissions": [
+    "storage",
+    "alarms",
+    "webNavigation",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://*/*"
+  ],
+  "externally_connectable": {
+    "matches": ["http://localhost:3000/*"]
+  }
+}
