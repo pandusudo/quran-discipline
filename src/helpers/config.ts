@@ -1,2 +1,2 @@
 /** The URL users are redirected to when a blocked site is detected. */
-export const BLOCK_REDIRECT_URL = "http://localhost:3000";
+export const BLOCK_REDIRECT_URL = "https://quran-discipline-web.vercel.app";
