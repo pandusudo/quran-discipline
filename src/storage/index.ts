@@ -6,12 +6,18 @@ export {
   initStorageDefaults,
 } from "./settings";
 export {
-  type BlockedSite,
-  getBlockedSites,
-  setBlockedSites,
-  incrementBlockedCount,
+  type BlockMode,
+  type BlockedSiteEntry,
+  type BlockRule,
+  type RuleSchedule,
+  getBlockRules,
+  setBlockRules,
+  incrementSiteBlockedCount,
+  isRuleActiveNow,
+  findGoverningRule,
 } from "./sites";
-export { type FocusSession, getFocusSession, setFocusSession } from "./session";
+export { type PomodoroSession, getPomodoroSession, setPomodoroSession, clearLegacyFocusSession } from "./session";
+export { type SiteList, getSiteLists, setSiteLists } from "./site-lists";
 export {
   type BlockHistoryEntry,
   getBlockHistory,

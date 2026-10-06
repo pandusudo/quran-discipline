@@ -18,11 +18,11 @@ const ToggleSection = ({
       disabled={isFocusActive}
     />
     {isFocusActive ? (
-      <p className="text-amber-600/70 text-xs text-center">
+      <p className="text-amber-600 text-xs text-center">
         Toggle locked during focus session
       </p>
     ) : (
-      <p className="text-emerald-700 text-xs text-center">
+      <p className="text-muted-foreground text-xs text-center">
         {isEnabled ? "Tap to pause blocking" : "Tap to enable blocking"}
       </p>
     )}

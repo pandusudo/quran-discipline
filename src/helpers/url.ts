@@ -4,3 +4,9 @@ export const normalizeDomain = (raw: string): string =>
     .replace(/^www\./, "")
     .split("/")[0]
     .toLowerCase();
+
+/** Exact or suffix match, e.g. "youtube.com" matches "m.youtube.com". */
+export const matchesDomainList = (domains: string[], hostname: string): boolean =>
+  domains.some(
+    (domain) => hostname === domain || hostname.endsWith(`.${domain}`),
+  );

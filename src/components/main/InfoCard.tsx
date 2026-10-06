@@ -4,13 +4,29 @@ interface InfoCardProps {
 }
 
 const InfoCard = ({ isEnabled, isFocusActive }: InfoCardProps) => (
-  <div className="w-full bg-emerald-900/20 rounded-xl border border-emerald-800/30 px-4 py-3 text-center">
-    <p className="text-emerald-600 text-xs leading-relaxed">
-      {isFocusActive
-        ? "🔒 Sites are hard-blocked — no bypass during focus"
+  <div
+    className={`w-full rounded-xl border px-4 py-3 text-center transition-colors duration-300 ${
+      isFocusActive
+        ? "bg-amber-50 border-amber-200"
         : isEnabled
-          ? "🛡️ Blocked sites will display a Qur'an verse"
-          : "⚠️ All websites are currently accessible"}
+          ? "bg-accent border-border"
+          : "bg-muted border-border"
+    }`}
+  >
+    <p
+      className={`text-xs leading-relaxed font-medium ${
+        isFocusActive
+          ? "text-amber-700"
+          : isEnabled
+            ? "text-accent-foreground"
+            : "text-muted-foreground"
+      }`}
+    >
+      {isFocusActive
+        ? "Sites are hard-blocked — no bypass during focus"
+        : isEnabled
+          ? "Blocked sites will display a Qur'an verse"
+          : "All websites are currently accessible"}
     </p>
   </div>
 );

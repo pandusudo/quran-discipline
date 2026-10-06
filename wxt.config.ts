@@ -38,7 +38,7 @@ export default defineConfig({
     },
     description:
       "Beat social media addiction with Quran Discipline and block distracting sites and stay focused with Quranic reminders.",
-    version: "1.0",
+    version: "1.2",
     permissions: ["storage", "alarms", "webNavigation", "tabs"],
     host_permissions: ["https://*/*"],
     externally_connectable: {

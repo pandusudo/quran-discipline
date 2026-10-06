@@ -1,52 +1,51 @@
 import { useState, useEffect } from "react";
 import MainView from "./views/MainView";
-import SettingsView from "./views/SettingsView";
-import FocusSessionView from "./views/FocusSessionView";
-import BottomTabBar from "./components/BottomTabBar";
-import type { Tab } from "./components/BottomTabBar";
 import {
   STORAGE_KEYS,
   initStorageDefaults,
   getSettings,
   setSettings,
-  getBlockedSites,
-  setBlockedSites,
-  getFocusSession,
-  type BlockedSite,
-  type FocusSession,
+  getPomodoroSession,
+  type PomodoroSession,
   type ExtensionSettings,
 } from "./storage";
 
 function App() {
-  const [activeTab, setActiveTab] = useState<Tab>("home");
   const [settings, setSettings_] = useState<ExtensionSettings>({
     showTranslation: true,
     showTransliteration: true,
     blockingEnabled: true,
+    isPaid: false,
   });
-  const [blockedSites, setBlockedSites_] = useState<BlockedSite[]>([]);
-  const [focusSession, setFocusSession] = useState<FocusSession | null>(null);
+  const [isFocusActive, setIsFocusActive] = useState(false);
+
+  const isFocusActiveNow = (session: PomodoroSession | null): boolean =>
+    session?.isActive === true &&
+    session.phase === "focus" &&
+    Date.now() < session.phaseEndTime;
 
   useEffect(() => {
     if (typeof chrome === "undefined" || !chrome.storage) return;
 
     initStorageDefaults();
 
-    Promise.all([getSettings(), getBlockedSites(), getFocusSession()]).then(
-      ([settingsData, sites, focus]) => {
+    Promise.all([getSettings(), getPomodoroSession()]).then(
+      ([settingsData, pomodoro]) => {
         setSettings_(settingsData);
-        setBlockedSites_(sites);
-        setFocusSession(focus);
+        setIsFocusActive(isFocusActiveNow(pomodoro));
       },
     );
 
-    // Keep focusSession and settings in sync when storage changes
+    // Keep the pomodoro session and settings in sync when storage changes
     const listener = (changes: {
       [key: string]: chrome.storage.StorageChange;
     }) => {
-      if (changes[STORAGE_KEYS.FOCUS_SESSION]) {
-        setFocusSession(
-          changes[STORAGE_KEYS.FOCUS_SESSION].newValue as FocusSession | null,
+      if (changes[STORAGE_KEYS.POMODORO_SESSION]) {
+        setIsFocusActive(
+          isFocusActiveNow(
+            (changes[STORAGE_KEYS.POMODORO_SESSION]
+              .newValue as PomodoroSession | null) ?? null,
+          ),
         );
       }
       if (changes[STORAGE_KEYS.SETTINGS]) {
@@ -67,31 +66,15 @@ function App() {
     }
   };
 
-  const handleSaveSites = (sites: BlockedSite[]) => {
-    setBlockedSites_(sites);
-    if (typeof chrome !== "undefined" && chrome.storage) {
-      setBlockedSites(sites);
-    }
-  };
-
-  const isFocusActive = focusSession?.isActive === true;
-
   return (
-    <div className="w-95 flex flex-col">
+    <div className="w-95 flex flex-col overflow-hidden">
       <div className="flex-1">
-        {activeTab === "home" && (
-          <MainView
-            isEnabled={settings.blockingEnabled}
-            onToggle={handleToggle}
-            isFocusActive={isFocusActive}
-          />
-        )}
-        {activeTab === "focus" && <FocusSessionView />}
-        {activeTab === "settings" && (
-          <SettingsView blockedSites={blockedSites} onSave={handleSaveSites} />
-        )}
+        <MainView
+          isEnabled={settings.blockingEnabled}
+          onToggle={handleToggle}
+          isFocusActive={isFocusActive}
+        />
       </div>
-      <BottomTabBar activeTab={activeTab} onChange={setActiveTab} />
     </div>
   );
 }

@@ -4,12 +4,14 @@ export interface ExtensionSettings {
   showTranslation: boolean;
   showTransliteration: boolean;
   blockingEnabled: boolean;
+  isPaid: boolean;
 }
 
 const DEFAULT_SETTINGS: ExtensionSettings = {
   showTranslation: true,
   showTransliteration: true,
   blockingEnabled: true,
+  isPaid: false,
 };
 
 export const getSettings = (): Promise<ExtensionSettings> =>

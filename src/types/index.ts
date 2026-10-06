@@ -1,10 +1,18 @@
 export type {
-  GetBlockedSitesMessage,
-  AddSiteMessage,
+  GetBlockRulesMessage,
+  CreateRuleMessage,
+  AddSiteToRuleMessage,
+  RemoveSiteFromRuleMessage,
   ToggleSiteMessage,
-  DeleteSiteMessage,
-  UpdateSiteMessage,
+  DeleteRuleMessage,
+  UpdateRuleMessage,
   GetSiteConfigMessage,
+  ImportDataMessage,
+  ImportMode,
+  GetSiteListsMessage,
+  CreateSiteListMessage,
+  UpdateSiteListMessage,
+  DeleteSiteListMessage,
 } from "./site";
 
 export type {
@@ -20,7 +28,12 @@ export type {
 
 export type { GetSettingsMessage, UpdateSettingsMessage } from "./settings";
 
-export type { BlockContext, GetFocusSessionMessage } from "./session";
+export type {
+  BlockContext,
+  GetPomodoroSessionMessage,
+  StartPomodoroSessionMessage,
+  StopPomodoroSessionMessage,
+} from "./session";
 
 export type {
   SuccessResponse,
@@ -29,12 +42,19 @@ export type {
 } from "./response";
 
 import type {
-  GetBlockedSitesMessage,
-  AddSiteMessage,
+  GetBlockRulesMessage,
+  CreateRuleMessage,
+  AddSiteToRuleMessage,
+  RemoveSiteFromRuleMessage,
   ToggleSiteMessage,
-  DeleteSiteMessage,
-  UpdateSiteMessage,
+  DeleteRuleMessage,
+  UpdateRuleMessage,
   GetSiteConfigMessage,
+  ImportDataMessage,
+  GetSiteListsMessage,
+  CreateSiteListMessage,
+  UpdateSiteListMessage,
+  DeleteSiteListMessage,
 } from "./site";
 import type {
   UnlockSiteMessage,
@@ -46,20 +66,33 @@ import type {
   ClearBlockHistoryMessage,
 } from "./history";
 import type { GetSettingsMessage, UpdateSettingsMessage } from "./settings";
-import type { GetFocusSessionMessage } from "./session";
+import type {
+  GetPomodoroSessionMessage,
+  StartPomodoroSessionMessage,
+  StopPomodoroSessionMessage,
+} from "./session";
 
 export type ExternalMessage =
-  | GetBlockedSitesMessage
-  | AddSiteMessage
+  | GetBlockRulesMessage
+  | CreateRuleMessage
+  | AddSiteToRuleMessage
+  | RemoveSiteFromRuleMessage
   | ToggleSiteMessage
-  | DeleteSiteMessage
-  | UpdateSiteMessage
+  | DeleteRuleMessage
+  | UpdateRuleMessage
   | GetBlockHistoryMessage
   | ClearBlockHistoryMessage
   | UnlockSiteMessage
   | GetUnlockStateMessage
   | ClearUnlockStateMessage
   | GetSiteConfigMessage
+  | ImportDataMessage
   | GetSettingsMessage
   | UpdateSettingsMessage
-  | GetFocusSessionMessage;
+  | GetSiteListsMessage
+  | CreateSiteListMessage
+  | UpdateSiteListMessage
+  | DeleteSiteListMessage
+  | GetPomodoroSessionMessage
+  | StartPomodoroSessionMessage
+  | StopPomodoroSessionMessage;

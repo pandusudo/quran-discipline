@@ -5,21 +5,21 @@ interface StatusBadgeProps {
 
 const StatusBadge = ({ isEnabled, isFocusActive }: StatusBadgeProps) => (
   <div
-    className={`flex items-center gap-2 px-4 py-1.5 rounded-full border text-sm font-medium transition-all duration-300 ${
+    className={`flex items-center gap-2 px-4 py-1.5 rounded-full border text-xs font-semibold tracking-wide uppercase transition-all duration-300 ${
       isFocusActive
-        ? "bg-amber-400/10 border-amber-400/30 text-amber-400"
+        ? "bg-amber-50 border-amber-200 text-amber-700"
         : isEnabled
-          ? "bg-emerald-500/10 border-emerald-500/25 text-emerald-400"
-          : "bg-slate-800/50 border-slate-700/40 text-slate-400"
+          ? "bg-primary/10 border-border text-accent-foreground"
+          : "bg-muted border-border text-muted-foreground"
     }`}
   >
     <span
-      className={`w-2 h-2 rounded-full shrink-0 ${
+      className={`w-1.5 h-1.5 rounded-full shrink-0 ${
         isFocusActive
           ? "bg-amber-400 animate-pulse"
           : isEnabled
-            ? "bg-emerald-400 animate-pulse"
-            : "bg-slate-500"
+            ? "bg-primary animate-pulse"
+            : "bg-muted-foreground/40"
       }`}
     />
     {isFocusActive

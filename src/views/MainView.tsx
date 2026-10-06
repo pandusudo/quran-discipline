@@ -1,6 +1,4 @@
-import { GeometricDivider } from "../components/GeometricDivider";
 import MainHeader from "../components/main/MainHeader";
-import BismillahBanner from "../components/main/BismillahBanner";
 import StatusBadge from "../components/main/StatusBadge";
 import ToggleSection from "../components/main/ToggleSection";
 import InfoCard from "../components/main/InfoCard";
@@ -13,15 +11,11 @@ interface MainViewProps {
 }
 
 const MainView = ({ isEnabled, onToggle, isFocusActive }: MainViewProps) => (
-  <div className="bg-emerald-950 min-h-120 flex flex-col">
+  <div className="bg-background min-h-110 flex flex-col">
     <MainHeader />
 
-    <GeometricDivider />
-
-    <BismillahBanner />
-
     {/* Main Content */}
-    <div className="flex-1 flex flex-col items-center justify-center px-6 py-4 gap-6">
+    <div className="flex-1 flex flex-col items-center justify-center px-6 py-7 gap-5">
       <StatusBadge isEnabled={isEnabled} isFocusActive={isFocusActive} />
       <ToggleSection
         isEnabled={isEnabled}
@@ -30,8 +24,6 @@ const MainView = ({ isEnabled, onToggle, isFocusActive }: MainViewProps) => (
       />
       <InfoCard isEnabled={isEnabled} isFocusActive={isFocusActive} />
     </div>
-
-    <GeometricDivider />
 
     <VerseFooter />
   </div>
