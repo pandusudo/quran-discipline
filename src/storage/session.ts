@@ -1,4 +1,5 @@
 import { LEGACY_FOCUS_SESSION_KEY, STORAGE_KEYS } from "./keys";
+import { storageGet, storageRemove, storageSet } from "./db";
 
 export interface PomodoroSession {
   isActive: boolean;
@@ -18,15 +19,13 @@ export interface PomodoroSession {
 }
 
 export const getPomodoroSession = (): Promise<PomodoroSession | null> =>
-  chrome.storage.sync
-    .get(STORAGE_KEYS.POMODORO_SESSION)
-    .then(
-      (r) => (r[STORAGE_KEYS.POMODORO_SESSION] as PomodoroSession) ?? null,
-    );
+  storageGet(STORAGE_KEYS.POMODORO_SESSION).then(
+    (r) => (r[STORAGE_KEYS.POMODORO_SESSION] as PomodoroSession) ?? null,
+  );
 
 export const setPomodoroSession = (session: PomodoroSession): Promise<void> =>
-  chrome.storage.sync.set({ [STORAGE_KEYS.POMODORO_SESSION]: session });
+  storageSet({ [STORAGE_KEYS.POMODORO_SESSION]: session });
 
 /** Removes the pre-pomodoro mock session (idempotent). */
 export const clearLegacyFocusSession = (): Promise<void> =>
-  chrome.storage.sync.remove(LEGACY_FOCUS_SESSION_KEY);
+  storageRemove(LEGACY_FOCUS_SESSION_KEY);

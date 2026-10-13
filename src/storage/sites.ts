@@ -1,4 +1,6 @@
 import { STORAGE_KEYS } from "./keys";
+import { storageGet, storageRemove, storageSet } from "./db";
+import { matchesHost } from "../helpers/url";
 
 export type BlockMode = "timer" | "audio" | "hard";
 
@@ -112,7 +114,7 @@ const buildRulesFromLegacy = (legacy: unknown): BlockRule[] => {
 };
 
 export const getBlockRules = async (): Promise<BlockRule[]> => {
-  const stored = await chrome.storage.sync.get([
+  const stored = await storageGet([
     STORAGE_KEYS.BLOCK_RULES,
     LEGACY_BLOCKED_SITES_KEY,
   ]);
@@ -128,7 +130,7 @@ export const getBlockRules = async (): Promise<BlockRule[]> => {
   }
 
   if (LEGACY_BLOCKED_SITES_KEY in stored) {
-    await chrome.storage.sync.remove(LEGACY_BLOCKED_SITES_KEY);
+    await storageRemove(LEGACY_BLOCKED_SITES_KEY);
   }
 
   return rules.map((rule) => ({
@@ -140,7 +142,7 @@ export const getBlockRules = async (): Promise<BlockRule[]> => {
 };
 
 export const setBlockRules = (rules: BlockRule[]): Promise<void> =>
-  chrome.storage.sync.set({ [STORAGE_KEYS.BLOCK_RULES]: rules });
+  storageSet({ [STORAGE_KEYS.BLOCK_RULES]: rules });
 
 interface GoverningRuleOptions {
   /** Only consider rules whose schedule is active right now. Defaults to `true`. */
@@ -148,9 +150,6 @@ interface GoverningRuleOptions {
   /** Only consider rules where the matching site entry is enabled. Defaults to `true`. */
   enabledOnly?: boolean;
 }
-
-const matchesHost = (hostname: string, domain: string): boolean =>
-  hostname === domain || hostname.endsWith(`.${domain}`);
 
 const isNewerRule = (
   candidate: BlockRule,
@@ -172,31 +171,89 @@ const isNewerRule = (
 };
 
 /**
+ * Every rule that currently covers a hostname (optionally only active ones).
+ * A hostname can live in several rules at once — each keeps its own mode,
+ * schedule and unlock state.
+ */
+export const getMatchingRules = (
+  rules: BlockRule[],
+  hostname: string,
+  options: GoverningRuleOptions = {},
+): BlockRule[] => {
+  const { activeOnly = true, enabledOnly = true } = options;
+
+  return rules.filter((rule) => {
+    if (activeOnly && !isRuleActiveNow(rule)) return false;
+    return rule.sites.some(
+      (site) =>
+        (!enabledOnly || site.enabled) && matchesHost(hostname, site.domain),
+    );
+  });
+};
+
+/**
  * The rule that governs a hostname: among the rules that currently match
- * (optionally only active ones), the most recently created rule wins. This
- * lets the same site live in several rules with different modes/schedules.
+ * (optionally only active ones), the most recently created rule wins. Used as
+ * a display fallback when no rule is actively blocking.
  */
 export const findGoverningRule = (
   rules: BlockRule[],
   hostname: string,
   options: GoverningRuleOptions = {},
 ): BlockRule | null => {
-  const { activeOnly = true, enabledOnly = true } = options;
+  const matching = getMatchingRules(rules, hostname, options);
 
   let winner: BlockRule | null = null;
   let winnerIndex = -1;
 
-  for (let index = 0; index < rules.length; index += 1) {
-    const rule = rules[index];
-    if (activeOnly && !isRuleActiveNow(rule)) continue;
-
-    const matches = rule.sites.some(
-      (site) =>
-        (!enabledOnly || site.enabled) && matchesHost(hostname, site.domain),
-    );
-    if (!matches) continue;
-
+  for (const rule of matching) {
+    const index = rules.indexOf(rule);
     if (!winner || isNewerRule(rule, index, winner, winnerIndex)) {
+      winner = rule;
+      winnerIndex = index;
+    }
+  }
+
+  return winner;
+};
+
+const MODE_RANK: Record<BlockMode, number> = { hard: 3, audio: 2, timer: 1 };
+
+/**
+ * The strictest rule among candidates: hard beats audio beats timer, then the
+ * longest wait wins, then the most recently created rule. This is the rule a
+ * block page shows when several rules block the same site at once.
+ */
+export const pickStrictestRule = (
+  candidates: BlockRule[],
+): BlockRule | null => {
+  let winner: BlockRule | null = null;
+  let winnerIndex = -1;
+
+  for (let index = 0; index < candidates.length; index += 1) {
+    const rule = candidates[index];
+    if (!winner) {
+      winner = rule;
+      winnerIndex = index;
+      continue;
+    }
+
+    const rankDiff = MODE_RANK[rule.blockMode] - MODE_RANK[winner.blockMode];
+    if (rankDiff !== 0) {
+      if (rankDiff > 0) {
+        winner = rule;
+        winnerIndex = index;
+      }
+      continue;
+    }
+    if (rule.timerSeconds !== winner.timerSeconds) {
+      if (rule.timerSeconds > winner.timerSeconds) {
+        winner = rule;
+        winnerIndex = index;
+      }
+      continue;
+    }
+    if (isNewerRule(rule, index, winner, winnerIndex)) {
       winner = rule;
       winnerIndex = index;
     }
@@ -207,13 +264,12 @@ export const findGoverningRule = (
 
 export const incrementSiteBlockedCount = async (
   domain: string,
+  ruleId: string,
 ): Promise<void> => {
   const rules = await getBlockRules();
-  const governing = findGoverningRule(rules, domain);
-  if (!governing) return;
 
   const updated = rules.map((rule) =>
-    rule.id !== governing.id
+    rule.id !== ruleId
       ? rule
       : {
           ...rule,

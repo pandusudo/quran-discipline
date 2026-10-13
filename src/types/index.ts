@@ -18,6 +18,7 @@ export type {
 export type {
   UnlockSiteMessage,
   GetUnlockStateMessage,
+  GetUnlockStatesMessage,
   ClearUnlockStateMessage,
 } from "./unlock";
 
@@ -31,6 +32,7 @@ export type { GetSettingsMessage, UpdateSettingsMessage } from "./settings";
 export type {
   BlockContext,
   GetPomodoroSessionMessage,
+  GetPomodoroStatsMessage,
   StartPomodoroSessionMessage,
   StopPomodoroSessionMessage,
 } from "./session";
@@ -59,6 +61,7 @@ import type {
 import type {
   UnlockSiteMessage,
   GetUnlockStateMessage,
+  GetUnlockStatesMessage,
   ClearUnlockStateMessage,
 } from "./unlock";
 import type {
@@ -68,6 +71,7 @@ import type {
 import type { GetSettingsMessage, UpdateSettingsMessage } from "./settings";
 import type {
   GetPomodoroSessionMessage,
+  GetPomodoroStatsMessage,
   StartPomodoroSessionMessage,
   StopPomodoroSessionMessage,
 } from "./session";
@@ -84,6 +88,7 @@ export type ExternalMessage =
   | ClearBlockHistoryMessage
   | UnlockSiteMessage
   | GetUnlockStateMessage
+  | GetUnlockStatesMessage
   | ClearUnlockStateMessage
   | GetSiteConfigMessage
   | ImportDataMessage
@@ -94,5 +99,6 @@ export type ExternalMessage =
   | UpdateSiteListMessage
   | DeleteSiteListMessage
   | GetPomodoroSessionMessage
+  | GetPomodoroStatsMessage
   | StartPomodoroSessionMessage
   | StopPomodoroSessionMessage;

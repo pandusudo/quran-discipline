@@ -1,7 +1,14 @@
 import { STORAGE_KEYS } from "./keys";
+import { matchesHost } from "../helpers/url";
 
 export interface TemporaryUnlock {
   domain: string;
+  /**
+   * The rule this unlock satisfies. Absent on legacy entries, which then
+   * satisfy every rule covering the domain. Haram-list hosts are never
+   * satisfied by unlocks at all.
+   */
+  ruleId?: string;
   expiresAt: number;
 }
 
@@ -22,40 +29,63 @@ export const setTemporaryUnlocks = (
 export const addTemporaryUnlock = async (
   domain: string,
   durationMinutes: number,
+  ruleId?: string,
 ): Promise<TemporaryUnlock> => {
   const unlocks = await getTemporaryUnlocks();
   const expiresAt = Date.now() + durationMinutes * 60 * 1000;
-  const newUnlock: TemporaryUnlock = { domain, expiresAt };
-  // Replace any existing unlock for the same domain
-  const filtered = unlocks.filter((u) => u.domain !== domain);
+  const newUnlock: TemporaryUnlock = {
+    domain,
+    expiresAt,
+    ...(ruleId ? { ruleId } : {}),
+  };
+  // Replace any existing unlock for the same (domain, rule) pair — unlocks
+  // for other rules on the same domain must survive.
+  const filtered = unlocks.filter(
+    (u) => !(u.domain === domain && u.ruleId === ruleId),
+  );
   await setTemporaryUnlocks([...filtered, newUnlock]);
   return newUnlock;
 };
 
-export const getTemporaryUnlock = async (
-  domain: string,
-): Promise<TemporaryUnlock | null> => {
+/** Non-expired unlocks, pruning expired entries from storage along the way. */
+export const getActiveTemporaryUnlocks = async (): Promise<
+  TemporaryUnlock[]
+> => {
   const unlocks = await getTemporaryUnlocks();
   const now = Date.now();
-  return unlocks.find((u) => u.domain === domain && u.expiresAt > now) ?? null;
-};
-
-export const clearTemporaryUnlock = async (domain: string): Promise<void> => {
-  const unlocks = await getTemporaryUnlocks();
-  await setTemporaryUnlocks(unlocks.filter((u) => u.domain !== domain));
-};
-
-export const isTemporarilyUnlocked = async (
-  domain: string,
-): Promise<boolean> => {
-  const unlocks = await getTemporaryUnlocks();
-  const now = Date.now();
-  // Prune expired entries while we're here
   const active = unlocks.filter((u) => u.expiresAt > now);
   if (active.length !== unlocks.length) {
     await setTemporaryUnlocks(active);
   }
-  return active.some(
-    (u) => u.domain === domain || domain.endsWith(`.${u.domain}`),
+  return active;
+};
+
+/** Whether an unlock list lets this rule stop blocking the hostname. */
+export const isRuleSatisfied = (
+  unlocks: TemporaryUnlock[],
+  ruleId: string,
+  hostname: string,
+): boolean =>
+  unlocks.some(
+    (u) =>
+      matchesHost(hostname, u.domain) &&
+      (u.ruleId === undefined || u.ruleId === ruleId),
   );
+
+/**
+ * Earliest expiry among unlocks covering the hostname — the moment the site
+ * blocks again once every blocking rule has been unlocked — or `null`.
+ */
+export const getCoveringUnlockExpiry = (
+  unlocks: TemporaryUnlock[],
+  hostname: string,
+): number | null => {
+  let earliest: number | null = null;
+  for (const unlock of unlocks) {
+    if (!matchesHost(hostname, unlock.domain)) continue;
+    if (earliest === null || unlock.expiresAt < earliest) {
+      earliest = unlock.expiresAt;
+    }
+  }
+  return earliest;
 };

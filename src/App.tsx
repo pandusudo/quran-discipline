@@ -15,6 +15,7 @@ function App() {
     showTranslation: true,
     showTransliteration: true,
     blockingEnabled: true,
+    translationLanguage: "en",
     isPaid: false,
   });
   const [isFocusActive, setIsFocusActive] = useState(false);

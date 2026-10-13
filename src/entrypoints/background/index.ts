@@ -12,12 +12,17 @@ import {
   getBlockHistory,
   clearBlockHistory,
   addTemporaryUnlock,
-  getTemporaryUnlock,
-  clearTemporaryUnlock,
-  isTemporarilyUnlocked,
+  getActiveTemporaryUnlocks,
+  isRuleSatisfied,
+  getCoveringUnlockExpiry,
   findGoverningRule,
+  getMatchingRules,
+  pickStrictestRule,
   getSettings,
   setSettings,
+  ensureStorageMigrated,
+  getPomodoroStats,
+  addFocusSeconds,
   type PomodoroSession,
   type SiteList,
   type BlockRule,
@@ -55,6 +60,13 @@ const DASHBOARD_HOSTNAMES = (() => {
   return hosts;
 })();
 
+/** Built-in list of hosts that are always blocked and can never be unlocked. */
+const isHaramHost = (hostname: string): boolean =>
+  hostname in haramHosts ||
+  Object.keys(haramHosts).some(
+    (domain) => hostname === domain || hostname.endsWith(`.${domain}`),
+  );
+
 const sanitizeSites = (sites: unknown): string[] => {
   if (!Array.isArray(sites)) return [];
   const out: string[] = [];
@@ -75,8 +87,27 @@ const buildSessionState = (session: PomodoroSession | null) => ({
   session,
 });
 
+/**
+ * Credits the focus time already spent on the phase that is ending (or is
+ * about to be cut short by a stop/replace). Capped at one full phase so an
+ * alarm that fires hours late cannot over-count.
+ */
+const creditFocusTime = (session: PomodoroSession | null): Promise<void> => {
+  if (!session?.isActive || session.phase !== "focus") return Promise.resolve();
+
+  const phaseMs = session.focusDuration * 60 * 1000;
+  const elapsedMs = phaseMs - (session.phaseEndTime - Date.now());
+  const seconds = Math.min(Math.max(elapsedMs, 0), phaseMs) / 1000;
+
+  return addFocusSeconds(seconds).catch(() => undefined);
+};
+
 // Intercept web navigations to enforce blocking rules
 export default defineBackground(() => {
+  // Copy any state older builds left in chrome.storage.sync into
+  // chrome.storage.local before the first navigation event reads it.
+  void ensureStorageMigrated();
+
   // Drop the pre-pomodoro mock session data (idempotent).
   void clearLegacyFocusSession();
 
@@ -117,34 +148,45 @@ export default defineBackground(() => {
         ? matchesDomainList(session.domains, hostname)
         : false;
 
-    const isInUserList = findGoverningRule(blockRules, hostname) !== null;
+    // Every matching rule unlocks on its own: the site stays blocked as long
+    // as at least one active rule has not been unlocked for this hostname.
+    const matchingRules = getMatchingRules(blockRules, hostname);
+    const activeUnlocks =
+      matchingRules.length > 0 ? await getActiveTemporaryUnlocks() : [];
+    const ruleBlockers = matchingRules.filter(
+      (rule) => !isRuleSatisfied(activeUnlocks, rule.id, hostname),
+    );
 
-    const isInHaramList =
-      hostname in haramHosts ||
-      Object.keys(haramHosts).some(
-        (domain) => hostname === domain || hostname.endsWith(`.${domain}`),
-      );
-
-    const isBlocked = isInUserList || isInHaramList;
-
-    const temporarilyUnlocked = isBlocked
-      ? await isTemporarilyUnlocked(hostname)
-      : false;
+    const isInHaramList = isHaramHost(hostname);
+    const isBlocked = ruleBlockers.length > 0 || isInHaramList;
 
     // During an active pomodoro focus phase, block regardless of temporary
     // unlock status or the blocking toggle.
     const shouldBlock = isFocusBlocking
-      ? isBlocked || isInPomodoroList
-      : isBlocked && !temporarilyUnlocked && isEnabled;
+      ? matchingRules.length > 0 || isInHaramList || isInPomodoroList
+      : isBlocked && isEnabled;
 
     if (!shouldBlock) return;
 
     const context: BlockContext = isFocusBlocking ? "focus" : "standard";
 
-    // Record block history and increment count
+    // Record block history and count it on the rule the block page shows —
+    // the strictest rule still blocking (all matching rules during focus).
+    const governing = pickStrictestRule(
+      isFocusBlocking ? matchingRules : ruleBlockers,
+    );
     await Promise.all([
-      addBlockHistoryEntry({ domain: hostname, url: details.url, context }),
-      incrementSiteBlockedCount(hostname),
+      // Bookkeeping must never keep the block page from loading.
+      addBlockHistoryEntry({ domain: hostname, url: details.url, context }).catch(
+        () => undefined,
+      ),
+      ...(governing
+        ? [
+            incrementSiteBlockedCount(hostname, governing.id).catch(
+              () => undefined,
+            ),
+          ]
+        : []),
     ]);
 
     const params = new URLSearchParams({
@@ -162,6 +204,9 @@ export default defineBackground(() => {
     if (alarm.name === ALARM_NAMES.FOCUS_PHASE_END) {
       getPomodoroSession().then((session: PomodoroSession | null) => {
         if (!session?.isActive) return;
+
+        // Bookkeeping must never block the phase transition.
+        void creditFocusTime(session);
 
         // No rest after the last cycle — end the session immediately.
         if (session.currentCycle >= session.totalCycles) {
@@ -373,29 +418,93 @@ export default defineBackground(() => {
             return ok(null);
           }
           case "UNLOCK_SITE": {
-            const { domain, durationMinutes } = message.payload;
+            const { domain, durationMinutes, ruleId } = message.payload;
             const normalizedDomain = normalizeDomain(domain);
-            await addTemporaryUnlock(normalizedDomain, durationMinutes);
+            await addTemporaryUnlock(normalizedDomain, durationMinutes, ruleId);
             return ok(null);
           }
           case "GET_UNLOCK_STATE": {
             const { domain } = message.payload;
             const normalizedDomain = normalizeDomain(domain);
-            const unlock = await getTemporaryUnlock(normalizedDomain);
-            return ok({ unlockedUntil: unlock ? unlock.expiresAt : null });
+            const rules = await getBlockRules();
+            const matching = getMatchingRules(rules, normalizedDomain);
+            // Report an unlock only when the site is fully unblocked: every
+            // matching rule unlocked, and never for haram hosts.
+            if (matching.length === 0 || isHaramHost(normalizedDomain)) {
+              return ok({ unlockedUntil: null });
+            }
+            const active = await getActiveTemporaryUnlocks();
+            const blockers = matching.filter(
+              (rule) => !isRuleSatisfied(active, rule.id, normalizedDomain),
+            );
+            if (blockers.length > 0) return ok({ unlockedUntil: null });
+            return ok({
+              unlockedUntil: getCoveringUnlockExpiry(active, normalizedDomain),
+            });
+          }
+          case "GET_UNLOCK_STATES": {
+            const active = await getActiveTemporaryUnlocks();
+            if (active.length === 0) return ok([]);
+
+            // One entry per unlock, `ruleId` included: the dashboard badges a
+            // site only on the rule it was actually unlocked for. Entries
+            // without a `ruleId` predate per-rule unlocks and apply to every
+            // rule covering the domain.
+            const seen = new Set<string>();
+            const result: {
+              domain: string;
+              unlockedUntil: number;
+              ruleId?: string;
+            }[] = [];
+            for (const entry of active) {
+              // Haram hosts are never satisfied by an unlock.
+              if (isHaramHost(entry.domain)) continue;
+
+              const key = `${entry.ruleId ?? "|"}|${entry.domain}`;
+              if (seen.has(key)) continue;
+              seen.add(key);
+
+              result.push({
+                domain: entry.domain,
+                unlockedUntil: entry.expiresAt,
+                ...(entry.ruleId !== undefined ? { ruleId: entry.ruleId } : {}),
+              });
+            }
+            return ok(result);
           }
           case "CLEAR_UNLOCK_STATE": {
-            const { domain } = message.payload;
-            const normalizedDomain = normalizeDomain(domain);
-            await clearTemporaryUnlock(normalizedDomain);
+            // Prunes expired entries only — still-valid per-rule unlocks on
+            // this domain must survive.
+            await getActiveTemporaryUnlocks();
             return ok(null);
           }
           case "GET_SITE_CONFIG": {
             const { domain } = message.payload;
             const normalizedDomain = normalizeDomain(domain);
             const rules = await getBlockRules();
+
+            // Haram hosts block unconditionally: always present as hard mode,
+            // regardless of which rules also cover the site.
+            if (isHaramHost(normalizedDomain)) {
+              return ok({
+                blockMode: "hard",
+                timerSeconds: 0,
+                unlockDurationMinutes: 0,
+                ruleId: null,
+              });
+            }
+
+            const matching = getMatchingRules(rules, normalizedDomain);
+            const active =
+              matching.length > 0 ? await getActiveTemporaryUnlocks() : [];
+            const blockers = matching.filter(
+              (rule) => !isRuleSatisfied(active, rule.id, normalizedDomain),
+            );
+            // Show the strictest rule that still blocks; fall back to the
+            // strictest matching rule while the site is temporarily open.
             const matchedRule =
-              findGoverningRule(rules, normalizedDomain) ??
+              pickStrictestRule(blockers) ??
+              pickStrictestRule(matching) ??
               findGoverningRule(rules, normalizedDomain, {
                 activeOnly: false,
                 enabledOnly: false,
@@ -405,6 +514,7 @@ export default defineBackground(() => {
               blockMode: matchedRule.blockMode,
               timerSeconds: matchedRule.timerSeconds,
               unlockDurationMinutes: matchedRule.unlockDurationMinutes,
+              ruleId: matchedRule.id,
             });
           }
           case "IMPORT_DATA": {
@@ -516,6 +626,9 @@ export default defineBackground(() => {
             const session = await getPomodoroSession();
             return ok(buildSessionState(session));
           }
+          case "GET_POMODORO_STATS": {
+            return ok(await getPomodoroStats());
+          }
           case "START_POMODORO_SESSION": {
             const { listId, focusDuration, restDuration, totalCycles } =
               message.payload;
@@ -546,6 +659,9 @@ export default defineBackground(() => {
             if (!list) return err("List not found");
             if (list.sites.length === 0) return err("List has no sites");
 
+            // Keep the focus time a session already in progress had spent.
+            await creditFocusTime(await getPomodoroSession());
+
             await Promise.all([
               chrome.alarms.clear(ALARM_NAMES.FOCUS_PHASE_END),
               chrome.alarms.clear(ALARM_NAMES.REST_PHASE_END),
@@ -571,11 +687,13 @@ export default defineBackground(() => {
             return ok(buildSessionState(session));
           }
           case "STOP_POMODORO_SESSION": {
+            const current = await getPomodoroSession();
+            await creditFocusTime(current);
+
             await Promise.all([
               chrome.alarms.clear(ALARM_NAMES.FOCUS_PHASE_END),
               chrome.alarms.clear(ALARM_NAMES.REST_PHASE_END),
             ]);
-            const current = await getPomodoroSession();
             const session = current
               ? { ...current, isActive: false }
               : null;

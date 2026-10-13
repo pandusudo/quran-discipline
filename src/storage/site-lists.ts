@@ -1,4 +1,5 @@
 import { STORAGE_KEYS } from "./keys";
+import { storageGet, storageSet } from "./db";
 
 export interface SiteList {
   id: string;
@@ -9,7 +10,7 @@ export interface SiteList {
 }
 
 export const getSiteLists = async (): Promise<SiteList[]> => {
-  const stored = await chrome.storage.sync.get(STORAGE_KEYS.SITE_LISTS);
+  const stored = await storageGet(STORAGE_KEYS.SITE_LISTS);
   const lists = stored[STORAGE_KEYS.SITE_LISTS];
   if (!Array.isArray(lists)) return [];
   return lists.filter(
@@ -23,4 +24,4 @@ export const getSiteLists = async (): Promise<SiteList[]> => {
 };
 
 export const setSiteLists = (lists: SiteList[]): Promise<void> =>
-  chrome.storage.sync.set({ [STORAGE_KEYS.SITE_LISTS]: lists });
+  storageSet({ [STORAGE_KEYS.SITE_LISTS]: lists });

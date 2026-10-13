@@ -2,6 +2,8 @@ export type BlockContext = "standard" | "focus";
 
 export type GetPomodoroSessionMessage = { type: "GET_POMODORO_SESSION" };
 
+export type GetPomodoroStatsMessage = { type: "GET_POMODORO_STATS" };
+
 export type StartPomodoroSessionMessage = {
   type: "START_POMODORO_SESSION";
   payload: {

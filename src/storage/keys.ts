@@ -5,6 +5,7 @@ export const STORAGE_KEYS = {
   BLOCK_HISTORY: "blockHistory",
   TEMPORARY_UNLOCKS: "temporaryUnlocks",
   SETTINGS: "extensionSettings",
+  POMODORO_STATS: "pomodoroStats",
 } as const;
 
 /** Pre-pomodoro mock session data — removed on startup. */

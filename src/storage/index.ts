@@ -1,6 +1,8 @@
 export { STORAGE_KEYS, ALARM_NAMES } from "./keys";
+export { ensureStorageMigrated } from "./db";
 export {
   type ExtensionSettings,
+  type TranslationLanguage,
   getSettings,
   setSettings,
   initStorageDefaults,
@@ -15,8 +17,15 @@ export {
   incrementSiteBlockedCount,
   isRuleActiveNow,
   findGoverningRule,
+  getMatchingRules,
+  pickStrictestRule,
 } from "./sites";
 export { type PomodoroSession, getPomodoroSession, setPomodoroSession, clearLegacyFocusSession } from "./session";
+export {
+  type PomodoroStats,
+  getPomodoroStats,
+  addFocusSeconds,
+} from "./pomodoro-stats";
 export { type SiteList, getSiteLists, setSiteLists } from "./site-lists";
 export {
   type BlockHistoryEntry,
@@ -29,7 +38,7 @@ export {
   getTemporaryUnlocks,
   setTemporaryUnlocks,
   addTemporaryUnlock,
-  getTemporaryUnlock,
-  clearTemporaryUnlock,
-  isTemporarilyUnlocked,
+  getActiveTemporaryUnlocks,
+  isRuleSatisfied,
+  getCoveringUnlockExpiry,
 } from "./unlocks";
