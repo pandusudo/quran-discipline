@@ -24,6 +24,10 @@ versus the previously shipped v1.6 build, except cleanups noted below.
 
 ### Changed
 
+- `WXT_WEB_URL` now drives the manifest (`externally_connectable`) **and**
+  the runtime dashboard/block-page URLs (`src/helpers/config.ts`) from a
+  single variable; when unset, the manifest omits `externally_connectable`
+  and the extension falls back to the production dashboard origin
 - Manifest version normalized to `1.6.0`
 - `externally_connectable` is now omitted when `WXT_WEB_URL` is unset, so
   local builds produce a valid manifest

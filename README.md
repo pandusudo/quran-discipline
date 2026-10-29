@@ -59,8 +59,9 @@ _Coming soon._
 4. Open `chrome://extensions`, enable **Developer mode**.
 5. Click **Load unpacked** and select the `.output/chrome-mv3` directory.
 
-To enable the dashboard integration locally, copy `.env.example` to `.env`
-and keep `WXT_WEB_URL` set to the dashboard origin before building.
+To point the build at a specific dashboard origin, copy `.env.example` to
+`.env` and set `WXT_WEB_URL` before building (see
+[Configuration](#configuration)).
 
 ## Development
 
@@ -82,6 +83,20 @@ npm run typecheck  # tsc --noEmit
 
 After `npm run dev` or `npm run build`, load/refresh the unpacked extension
 from `chrome://extensions`.
+
+### Configuration
+
+One environment variable, `WXT_WEB_URL`, controls the companion dashboard
+origin end to end. Set it in `.env` (copy `.env.example`) or in your shell
+before running WXT commands.
+
+| Effect                                              | When `WXT_WEB_URL` is set                                                 | When unset                                                          |
+| --------------------------------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| Manifest `externally_connectable` (`wxt.config.ts`) | Allowed origin can message the extension                                  | Entry omitted (valid local manifest)                                |
+| Runtime URLs (`src/helpers/config.ts`)              | Blocked-site redirect and the popup's dashboard button target this origin | Falls back to `https://quran.pandusudo.xyz` so blocking still works |
+
+Release builds (`.github/workflows/release.yml`) set it to the production
+dashboard.
 
 ## Project structure
 
