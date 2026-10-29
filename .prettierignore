@@ -1,0 +1,10 @@
+node_modules
+dist
+.out
+.output
+out
+.wxt
+package-lock.json
+scripts/hosts.txt
+src/data/blocked-hosts.json
+coverage

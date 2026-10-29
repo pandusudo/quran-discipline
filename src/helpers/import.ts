@@ -74,10 +74,7 @@ const sanitizeSite = (
     domain,
     addedAt: typeof raw.addedAt === "string" ? raw.addedAt : fallbackAddedAt,
     enabled: typeof raw.enabled === "boolean" ? raw.enabled : true,
-    blockedCount: Math.max(
-      0,
-      Math.round(toFiniteNumber(raw.blockedCount, 0)),
-    ),
+    blockedCount: Math.max(0, Math.round(toFiniteNumber(raw.blockedCount, 0))),
   };
 };
 
@@ -115,17 +112,20 @@ const sanitizeRule = (
   return {
     droppedSites: rawSites.length - sites.length,
     rule: {
-    id:
-      typeof raw.id === "string" && raw.id.trim().length > 0
-        ? raw.id.trim()
-        : `${fallbackId}-${index}`,
-    ...(name ? { name } : {}),
-    blockMode: rawMode === "full" ? "hard" : (rawMode as BlockMode),
-    timerSeconds: Math.max(0, Math.round(toFiniteNumber(raw.timerSeconds, 30))),
-    unlockDurationMinutes: Math.max(
-      0,
-      Math.round(toFiniteNumber(raw.unlockDurationMinutes, 5)),
-    ),
+      id:
+        typeof raw.id === "string" && raw.id.trim().length > 0
+          ? raw.id.trim()
+          : `${fallbackId}-${index}`,
+      ...(name ? { name } : {}),
+      blockMode: rawMode === "full" ? "hard" : (rawMode as BlockMode),
+      timerSeconds: Math.max(
+        0,
+        Math.round(toFiniteNumber(raw.timerSeconds, 30)),
+      ),
+      unlockDurationMinutes: Math.max(
+        0,
+        Math.round(toFiniteNumber(raw.unlockDurationMinutes, 5)),
+      ),
       schedule: sanitizeSchedule(raw.schedule),
       sites,
       createdAt: typeof raw.createdAt === "string" ? raw.createdAt : now,

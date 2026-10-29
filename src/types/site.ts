@@ -1,9 +1,4 @@
-import type {
-  BlockRule,
-  BlockMode,
-  RuleSchedule,
-  SiteList,
-} from "../storage";
+import type { BlockRule, BlockMode, RuleSchedule, SiteList } from "../storage";
 
 export type GetBlockRulesMessage = { type: "GET_BLOCK_RULES" };
 

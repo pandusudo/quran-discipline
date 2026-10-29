@@ -1,4 +1,4 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 
 @theme inline {
   --color-background: var(--background);
@@ -43,7 +43,7 @@
   --muted: oklch(0.97 0 0);
   --muted-foreground: oklch(0.556 0 0);
   --accent: oklch(0.94 0.04 155);
-  --accent-foreground: oklch(0.30 0.10 158);
+  --accent-foreground: oklch(0.3 0.1 158);
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
@@ -53,7 +53,7 @@
   --violet-foreground: oklch(0.985 0 0);
   --violet-surface: oklch(0.95 0.035 300);
   --violet-surface-foreground: oklch(0.42 0.14 300);
-  --sidebar: oklch(0.32 0.10 158);
+  --sidebar: oklch(0.32 0.1 158);
   --radius: 0.625rem;
 }
 
@@ -74,7 +74,9 @@ body {
 }
 
 .font-arabic {
-  font-family: 'Traditional Arabic', 'Amiri', 'Scheherazade New', 'Noto Naskh Arabic', serif;
+  font-family:
+    "Traditional Arabic", "Amiri", "Scheherazade New", "Noto Naskh Arabic",
+    serif;
   line-height: 2.2;
   letter-spacing: 0;
 }

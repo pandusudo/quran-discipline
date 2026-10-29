@@ -20,7 +20,13 @@ export {
   getMatchingRules,
   pickStrictestRule,
 } from "./sites";
-export { type PomodoroSession, getPomodoroSession, setPomodoroSession, clearLegacyFocusSession } from "./session";
+export {
+  type PomodoroSession,
+  getPomodoroSession,
+  setPomodoroSession,
+  isFocusPhaseActive,
+  clearLegacyFocusSession,
+} from "./session";
 export {
   type PomodoroStats,
   getPomodoroStats,

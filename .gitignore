@@ -7,12 +7,30 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Dependencies
 node_modules
+
+# Build output
 dist
 dist-ssr
+.out
+.output
+out
 *.local
 
-# Editor directories and files
+# WXT generated files (recreated by `wxt prepare` / `wxt dev`)
+.wxt
+
+# Environment (copy .env.example to .env for local overrides)
+.env
+.env.*
+!.env.example
+
+# Extension signing keys — never commit these
+*.pem
+*.crx
+
+# OS / editor
 .vscode/*
 !.vscode/extensions.json
 .idea
@@ -22,8 +40,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-.github
-.wxt
-.output
-out
-.env
+
+# Test / tooling cache
+coverage
+.eslintcache
+
+# parse-hosts.mjs byproduct (no path rules are currently used)
+src/data/blocked-paths.json

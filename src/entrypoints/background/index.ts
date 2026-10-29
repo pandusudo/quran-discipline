@@ -21,6 +21,7 @@ import {
   getSettings,
   setSettings,
   ensureStorageMigrated,
+  isFocusPhaseActive,
   getPomodoroStats,
   addFocusSeconds,
   type PomodoroSession,
@@ -30,12 +31,9 @@ import {
   type ExtensionSettings,
 } from "../../storage";
 import { BLOCK_REDIRECT_URL, DASHBOARD_URL } from "../../helpers/config";
-import type {
-  BlockContext,
-  ExternalMessage,
-  ExtensionResponse,
-} from "../../types";
+import type { ExternalMessage, ExtensionResponse } from "../../types";
 import { matchesDomainList, normalizeDomain } from "../../helpers/url";
+import { evaluateBlocking } from "../../helpers/blocking";
 import {
   buildImportResult,
   sanitizeImportedSiteLists,
@@ -80,10 +78,7 @@ const sanitizeSites = (sites: unknown): string[] => {
 
 /** `isActive` here means "focus phase is blocking right now". */
 const buildSessionState = (session: PomodoroSession | null) => ({
-  isActive:
-    session?.isActive === true &&
-    session.phase === "focus" &&
-    Date.now() < session.phaseEndTime,
+  isActive: isFocusPhaseActive(session),
   session,
 });
 
@@ -138,48 +133,38 @@ export default defineBackground(() => {
 
     // Active pomodoro focus phase — no unlock, and the selected list's
     // sites are blocked on top of the usual rules.
-    const isFocusBlocking =
-      session?.isActive === true &&
-      session.phase === "focus" &&
-      Date.now() < session.phaseEndTime;
+    const isFocusBlocking = isFocusPhaseActive(session);
 
     const isInPomodoroList =
       isFocusBlocking && session !== null
         ? matchesDomainList(session.domains, hostname)
         : false;
 
-    // Every matching rule unlocks on its own: the site stays blocked as long
-    // as at least one active rule has not been unlocked for this hostname.
     const matchingRules = getMatchingRules(blockRules, hostname);
     const activeUnlocks =
       matchingRules.length > 0 ? await getActiveTemporaryUnlocks() : [];
-    const ruleBlockers = matchingRules.filter(
-      (rule) => !isRuleSatisfied(activeUnlocks, rule.id, hostname),
-    );
-
     const isInHaramList = isHaramHost(hostname);
-    const isBlocked = ruleBlockers.length > 0 || isInHaramList;
 
-    // During an active pomodoro focus phase, block regardless of temporary
-    // unlock status or the blocking toggle.
-    const shouldBlock = isFocusBlocking
-      ? matchingRules.length > 0 || isInHaramList || isInPomodoroList
-      : isBlocked && isEnabled;
+    const { shouldBlock, context, governing } = evaluateBlocking({
+      hostname,
+      isEnabled,
+      isFocusBlocking,
+      matchingRules,
+      activeUnlocks,
+      isInPomodoroList,
+      isInHaramList,
+    });
 
     if (!shouldBlock) return;
 
-    const context: BlockContext = isFocusBlocking ? "focus" : "standard";
-
-    // Record block history and count it on the rule the block page shows —
-    // the strictest rule still blocking (all matching rules during focus).
-    const governing = pickStrictestRule(
-      isFocusBlocking ? matchingRules : ruleBlockers,
-    );
+    // Record block history and count it on the rule the block page shows.
     await Promise.all([
       // Bookkeeping must never keep the block page from loading.
-      addBlockHistoryEntry({ domain: hostname, url: details.url, context }).catch(
-        () => undefined,
-      ),
+      addBlockHistoryEntry({
+        domain: hostname,
+        url: details.url,
+        context,
+      }).catch(() => undefined),
       ...(governing
         ? [
             incrementSiteBlockedCount(hostname, governing.id).catch(
@@ -395,9 +380,7 @@ export default defineBackground(() => {
               sites !== undefined ? sanitizeSites(sites) : target.sites;
 
             const updated = lists.map((l) =>
-              l.id === listId
-                ? { ...l, name: nextName, sites: nextSites }
-                : l,
+              l.id === listId ? { ...l, name: nextName, sites: nextSites } : l,
             );
             await setSiteLists(updated);
             return ok(updated);
@@ -694,9 +677,7 @@ export default defineBackground(() => {
               chrome.alarms.clear(ALARM_NAMES.FOCUS_PHASE_END),
               chrome.alarms.clear(ALARM_NAMES.REST_PHASE_END),
             ]);
-            const session = current
-              ? { ...current, isActive: false }
-              : null;
+            const session = current ? { ...current, isActive: false } : null;
             if (session) await setPomodoroSession(session);
             return ok(buildSessionState(session));
           }
