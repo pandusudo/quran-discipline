@@ -7,10 +7,9 @@
 > blocks distracting and harmful sites with per-rule modes and a Pomodoro
 > focus timer.
 
-<!-- Screenshots / GIF — replace the placeholders below before the first public release.
-[![Popup](docs/screenshots/popup.png)](docs/screenshots/popup.png)
-[![Block page](docs/screenshots/blocked.png)](docs/screenshots/blocked.png)
--->
+<!-- Screenshots: add docs/screenshots/popup.png and docs/screenshots/blocked.png
+     (popup UI and an example block page), then link them here and remove this
+     comment. Until then, build and load the extension to see the UI. -->
 
 ## Why this exists
 
