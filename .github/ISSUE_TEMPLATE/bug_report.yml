@@ -1,0 +1,53 @@
+name: Bug report
+description: Report a problem with Quran Discipline
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug.
+        **Security issues:** please do not file them publicly — see [SECURITY.md](https://github.com/pandusudo/quran-discipline/blob/master/SECURITY.md).
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Clear description of the bug and its impact.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Create a rule with …
+        2. Visit …
+        3. See error …
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Extension version
+      placeholder: "e.g. 1.6.0 (see chrome://extensions)"
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and OS
+      placeholder: "e.g. Chrome 130 on Ubuntu 24.04"
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant console output (optional)
+      description: Service-worker or popup console logs help a lot.
+      render: shell
