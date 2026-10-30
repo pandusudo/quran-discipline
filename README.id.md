@@ -38,7 +38,7 @@ siapa pun yang ingin merebut kembali perhatiannya.
 
 ### Chrome Web Store
 
-_Segera hadir._
+**[Pasang dari Chrome Web Store](https://chromewebstore.google.com/detail/quran-discipline/acnopcafpacgcbokiagbaednlndhfkdi)**
 
 ### Load unpacked (dari source)
 

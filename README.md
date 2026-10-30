@@ -47,9 +47,7 @@ for anyone trying to reclaim their attention.
 
 ### Chrome Web Store
 
-<!-- Placeholder — update when the listing is live -->
-
-_Coming soon._
+**[Install from the Chrome Web Store](https://chromewebstore.google.com/detail/quran-discipline/acnopcafpacgcbokiagbaednlndhfkdi)**
 
 ### Load unpacked (from source)
 
@@ -143,7 +141,9 @@ popup toggle is locked.
 
 **Dashboard integration**: the companion site manages rules through the
 `onMessageExternal` API (`externally_connectable`), which exposes CRUD for
-rules, site lists, unlocks, history, settings, and Pomodoro sessions.
+rules, site lists, unlocks, history, settings, and Pomodoro sessions. The full
+message contract is documented for contributors in
+[docs/dashboard-bridge.md](docs/dashboard-bridge.md).
 
 ## Permissions
 

@@ -35,6 +35,13 @@ helps people protect their attention and worship — every contribution counts.
 
 ### Architecture notes
 
+- **Dashboard ↔ extension bridge**: the companion dashboard talks to this
+  extension over `chrome.runtime.onMessageExternal`, gated by
+  `externally_connectable`. The full contract — every message type, the
+  response envelope, the block-page redirect URL, storage keys, and gotchas —
+  is documented in [docs/dashboard-bridge.md](docs/dashboard-bridge.md). Read
+  it before changing `src/entrypoints/background/`, `src/types/`, or
+  `wxt.config.ts`.
 - **Blocking logic** is a pure function (`src/helpers/blocking.ts`) shared by
   the background worker and tests. Prefer extending it over adding inline
   conditionals in `src/entrypoints/background/index.ts`.
