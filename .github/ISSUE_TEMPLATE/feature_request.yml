@@ -1,0 +1,34 @@
+name: Feature request
+description: Suggest an idea for Quran Discipline
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe the problem you're trying to solve — not just the solution you
+        have in mind. Larger features may be discussed before implementation.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / motivation
+      description: What are you trying to do that the extension doesn't support today?
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: How you imagine it working (UI, behavior, settings…).
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: checkboxes
+    id: permissions
+    attributes:
+      label: Scope check
+      options:
+        - label: I understand this may require new permissions or change privacy behavior, and I'm OK discussing that trade-off.

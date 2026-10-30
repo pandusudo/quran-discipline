@@ -9,7 +9,6 @@ export interface ExtensionSettings {
   blockingEnabled: boolean;
   /** Language of the translation shown for verses. */
   translationLanguage: TranslationLanguage;
-  isPaid: boolean;
 }
 
 const DEFAULT_SETTINGS: ExtensionSettings = {
@@ -17,14 +16,19 @@ const DEFAULT_SETTINGS: ExtensionSettings = {
   showTransliteration: true,
   blockingEnabled: true,
   translationLanguage: "en",
-  isPaid: false,
 };
 
 /** Fills in keys older builds never wrote and rejects unknown languages. */
 const withDefaults = (
-  stored: Partial<ExtensionSettings> | undefined,
+  stored: (Partial<ExtensionSettings> & { isPaid?: boolean }) | undefined,
 ): ExtensionSettings => {
-  const settings: ExtensionSettings = { ...DEFAULT_SETTINGS, ...stored };
+  // Strip keys removed from the schema (e.g. the legacy paywall flag) so they
+  // stop being persisted on the next write.
+  const rest: Partial<ExtensionSettings> & { isPaid?: boolean } = {
+    ...(stored ?? {}),
+  };
+  delete rest.isPaid;
+  const settings: ExtensionSettings = { ...DEFAULT_SETTINGS, ...rest };
   if (
     settings.translationLanguage !== "en" &&
     settings.translationLanguage !== "id"

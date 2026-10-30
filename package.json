@@ -1,11 +1,41 @@
 {
   "name": "quran-discipline",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.6.0",
+  "description": "Chrome extension that blocks distracting and harmful sites with Quranic reminders, per-rule modes, and a Pomodoro focus timer.",
+  "license": "GPL-3.0-only",
+  "author": "Pandu Cahyo Pangestu",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pandusudo/quran-discipline.git"
+  },
+  "bugs": {
+    "url": "https://github.com/pandusudo/quran-discipline/issues"
+  },
+  "homepage": "https://github.com/pandusudo/quran-discipline#readme",
+  "keywords": [
+    "chrome-extension",
+    "focus",
+    "productivity",
+    "pomodoro",
+    "website-blocker",
+    "quran",
+    "discipline",
+    "anti-addiction"
+  ],
   "type": "module",
   "scripts": {
-    "build": "npx wxt build",
-    "zip": "npx wxt zip"
+    "dev": "wxt",
+    "build": "wxt build",
+    "zip": "wxt zip",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "wxt prepare && tsc --noEmit",
+    "compile:hostlist": "node scripts/parse-hosts.mjs"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.2.2",
@@ -20,16 +50,17 @@
     "@types/node": "^24.12.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.1",
     "@wxt-dev/module-react": "^1.2.2",
     "eslint": "^9.39.4",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.4.0",
+    "prettier": "^3.6.2",
     "tldts": "^7.0.30",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.57.0",
     "vite": "^8.0.1",
+    "vitest": "^3.2.4",
     "wxt": "^0.20.26"
   }
 }

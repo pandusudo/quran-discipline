@@ -33,7 +33,9 @@ export interface BlockRule {
 }
 
 const toMinutes = (time: string): number => {
-  const [hours, minutes] = time.split(":").map((part) => Number.parseInt(part, 10));
+  const [hours, minutes] = time
+    .split(":")
+    .map((part) => Number.parseInt(part, 10));
   if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return NaN;
   return hours * 60 + minutes;
 };

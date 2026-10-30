@@ -20,6 +20,8 @@ export default defineConfig({
   webExt: {
     disabled: true,
   },
+  // `import.meta.env.WXT_WEB_URL` is only readable inside this function —
+  // WXT loads .env files after the config module itself is evaluated.
   manifest: () => ({
     name: "Quran Discipline",
     icons: {
@@ -38,11 +40,25 @@ export default defineConfig({
     },
     description:
       "Beat social media addiction with Quran Discipline and block distracting sites and stay focused with Quranic reminders.",
-    version: "1.6",
+    version: "1.6.0",
+    // storage — block rules, site lists, settings, history, Pomodoro session
+    // alarms — Pomodoro focus/rest phase timers
+    // webNavigation — intercept top-level navigations to redirect blocked sites
+    // tabs — open the dashboard on install; redirect blocked tabs to the block page
     permissions: ["storage", "alarms", "webNavigation", "tabs"],
+    // Broad host access so webNavigation events are observed for every https
+    // site the user visits — blocking only ever matches user-defined rules,
+    // the Pomodoro list, or the bundled always-block list.
     host_permissions: ["https://*/*"],
-    externally_connectable: {
-      matches: [`${import.meta.env.WXT_WEB_URL}/*`],
-    },
+    // The companion dashboard (block page + rule management UI) may call
+    // runtime.sendMessage on this extension. Only present when WXT_WEB_URL is
+    // set (see .env.example) so local builds don't emit an invalid origin.
+    ...(import.meta.env.WXT_WEB_URL
+      ? {
+          externally_connectable: {
+            matches: [`${import.meta.env.WXT_WEB_URL}/*`],
+          },
+        }
+      : {}),
   }),
 });

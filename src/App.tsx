@@ -6,6 +6,7 @@ import {
   getSettings,
   setSettings,
   getPomodoroSession,
+  isFocusPhaseActive,
   type PomodoroSession,
   type ExtensionSettings,
 } from "./storage";
@@ -16,14 +17,8 @@ function App() {
     showTransliteration: true,
     blockingEnabled: true,
     translationLanguage: "en",
-    isPaid: false,
   });
   const [isFocusActive, setIsFocusActive] = useState(false);
-
-  const isFocusActiveNow = (session: PomodoroSession | null): boolean =>
-    session?.isActive === true &&
-    session.phase === "focus" &&
-    Date.now() < session.phaseEndTime;
 
   useEffect(() => {
     if (typeof chrome === "undefined" || !chrome.storage) return;
@@ -33,7 +28,7 @@ function App() {
     Promise.all([getSettings(), getPomodoroSession()]).then(
       ([settingsData, pomodoro]) => {
         setSettings_(settingsData);
-        setIsFocusActive(isFocusActiveNow(pomodoro));
+        setIsFocusActive(isFocusPhaseActive(pomodoro));
       },
     );
 
@@ -43,7 +38,7 @@ function App() {
     }) => {
       if (changes[STORAGE_KEYS.POMODORO_SESSION]) {
         setIsFocusActive(
-          isFocusActiveNow(
+          isFocusPhaseActive(
             (changes[STORAGE_KEYS.POMODORO_SESSION]
               .newValue as PomodoroSession | null) ?? null,
           ),
