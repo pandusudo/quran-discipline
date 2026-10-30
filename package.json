@@ -57,7 +57,7 @@
     "globals": "^17.4.0",
     "prettier": "^3.6.2",
     "tldts": "^7.0.30",
-    "typescript": "~5.9.3",
+    "typescript": "~7.0.2",
     "typescript-eslint": "^8.57.0",
     "vite": "^8.0.1",
     "vitest": "^3.2.4",
